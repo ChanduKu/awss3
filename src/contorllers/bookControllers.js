@@ -2,6 +2,7 @@ const bookModel = require("../models/bookModel");
 const userModel = require("../models/userModel");
 const mongoose = require("mongoose");
 const Validator = require("validator");
+const aws=require('aws-sdk')
 const moment = require("moment");
 const isValidObjectId = function (ObjectId) {
     return mongoose.Types.ObjectId.isValid(ObjectId);
@@ -17,9 +18,47 @@ const isValid = function (value) {
     if (typeof value === "string" && value.trim().length === 0) return false;
     return true;
 };
+//---------------------aws s3----------------------------------//
+aws.config.update({
+    accessKeyId: "AKIAY3L35MCRVFM24Q7U",
+    secretAccessKey: "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",
+    region: "ap-south-1"
+})
+let uploadFile= async ( file) =>{
+   return new Promise( function(resolve, reject) {
+    let s3= new aws.S3({apiVersion: '2006-03-01'}); 
+
+    var uploadParams= {
+        ACL: "public-read",
+        Bucket: "classroom-training-bucket",  //HERE
+        Key: "abc/" + file.originalname, //HERE 
+        Body: file.buffer
+    }
+
+
+    s3.upload( uploadParams, function (err, data ){
+        if(err) {
+            return reject({"error": err})
+        }
+        console.log(data)
+        console.log("file uploaded succesfully")
+        return resolve(data.Location)
+    })
+
+
+   })
+}
+
+
+
+//----------------------------------------------------------------------------------//
 const bookCreation = async function (req, res) {
     try {
         let data = req.body;
+        let files=req.files
+        if(files && files.length>0){
+            var uplodedFileURL=await uploadFile(files[0])
+        }
         const { title, excerpt, userId, ISBN, category, subcategory, releasedAt } = data;
         //.....checking the body is present or not------------//
         if (!isValidReqBody(data))
@@ -101,6 +140,7 @@ const bookCreation = async function (req, res) {
                 status: true,
                 message: "Book created successfully",
                 data: creatbook,
+                awsS3:uplodedFileURL
             });
     } catch (err) {
         return res.status(500).send({ status: false, error: err.message });

@@ -320,3 +320,7 @@ Refer below sample
   }
 }
 ```
+AWS S3:
+  Add book cover (string) key in oyour bookmodel in book maagemt project
+  2.when boook is being created take up the book cover as an image .upload it to s3 and save the url in book cover key
+  3.submit a sort vedio on the same day Individually
